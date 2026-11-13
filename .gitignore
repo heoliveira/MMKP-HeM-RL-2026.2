@@ -13,3 +13,7 @@ CMakeFiles/
 
 # EN: Drawing text files / PT: Arquivos de texto de desenho
 *drawing.txt
+# EN: Python environment and caches / PT: Ambiente Python e caches
+.venv/
+__pycache__/
+*.pyc

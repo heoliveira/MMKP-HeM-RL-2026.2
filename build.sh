@@ -23,6 +23,8 @@ CLEAN_DATA=false
 CLEAN_RESULTS=false
 CLEAN_BUILD=false
 GEN_DOCS=false
+NO_CPLEX=false
+NO_RUN=false
 
 # =============================================================================
 # EN: Parse command-line arguments
@@ -35,6 +37,8 @@ while [[ "$#" -gt 0 ]]; do
         -b|--build)   CLEAN_BUILD=true ;;
         -a|--all)     CLEAN_DATA=true; CLEAN_RESULTS=true; CLEAN_BUILD=true ;;
         -doc|--docs)  GEN_DOCS=true ;;
+        --no-cplex)   NO_CPLEX=true ;;  # EN: build without CPLEX (heuristics + SA only) | PT: compila sem CPLEX
+        --no-run)     NO_RUN=true ;;    # EN: compile only, do not run | PT: só compila, não executa
         *) echo "Unknown parameter / Parâmetro desconhecido: $1"; exit 1 ;;
     esac
     shift
@@ -97,14 +101,24 @@ fi
 echo "=== [EN] Setting up build directory | [PT] Configurando o diretório build ==="
 mkdir -p build
 
-echo "=== [EN] Compiling with G++ (CPLEX + Heuristics) | [PT] Compilando com G++ ==="
-# EN: Direct G++ compilation command with maximum optimization (-O3)
-# PT: Linha de compilação direta do G++ com otimização máxima (-O3)
-/usr/bin/g++ -O3 -std=c++17 -fPIC -fexceptions -DNDEBUG -DIL_STD \
-    -I$CPLEX_INCLUDE -I$CONCERT_INCLUDE -Iinclude \
-    src/*.cpp -o build/MMKP_IoT-EC-CC \
-    -L$CPLEX_LIB -L$CONCERT_LIB \
-    -lilocplex -lconcert -lcplex -lm -lpthread -ldl -w
+if [ "$NO_CPLEX" = true ]; then
+    echo "=== [EN] Compiling with G++ WITHOUT CPLEX | [PT] Compilando com G++ SEM CPLEX ==="
+    /usr/bin/g++ -O3 -std=c++17 -DNDEBUG -Iinclude src/*.cpp -o build/MMKP_IoT-EC-CC -w
+else
+    echo "=== [EN] Compiling with G++ (CPLEX + Heuristics) | [PT] Compilando com G++ ==="
+    # EN: Direct G++ compilation command with maximum optimization (-O3)
+    # PT: Linha de compilação direta do G++ com otimização máxima (-O3)
+    /usr/bin/g++ -O3 -std=c++17 -fPIC -fexceptions -DNDEBUG -DIL_STD -DUSE_CPLEX \
+        -I$CPLEX_INCLUDE -I$CONCERT_INCLUDE -Iinclude \
+        src/*.cpp -o build/MMKP_IoT-EC-CC \
+        -L$CPLEX_LIB -L$CONCERT_LIB \
+        -lilocplex -lconcert -lcplex -lm -lpthread -ldl -w
+fi
+
+if [ "$NO_RUN" = true ]; then
+    echo "=== [EN] Build succeeded (not running) | [PT] Build concluído (sem executar) ==="
+    exit 0
+fi
 
 echo "=== [EN] Build succeeded! Running simulation... | [PT] Build concluído! Executando... ==="
 echo "-----------------------------------------------------------------------------------------"

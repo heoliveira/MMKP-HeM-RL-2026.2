@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -269,6 +270,34 @@ namespace randomness {
         static std::random_device rd;
         static std::mt19937 engine(rd());
         return engine;
+    }
+
+    /**
+     * @brief Reseeds the global engine so that every following draw is reproducible.
+     * @param value The 64-bit seed (split into two 32-bit words for `std::seed_seq`).
+     */
+    inline void seed(std::uint64_t value) {
+        std::seed_seq seq{static_cast<std::uint32_t>(value), static_cast<std::uint32_t>(value >> 32)};
+        get_engine().seed(seq);
+    }
+
+    /**
+     * @brief Combines integers into a single 64-bit seed (SplitMix64 finalizer).
+     * @details Nearby inputs (e.g., run 1 and run 2) yield unrelated seeds, so each
+     * (instance, size, run, algorithm) tuple gets its own reproducible random stream.
+     * @param parts Any number of integral values identifying the random stream.
+     * @return The mixed 64-bit seed.
+     */
+    template <typename... Args>
+    inline std::uint64_t mix_seed(Args... parts) {
+        std::uint64_t h = 0x9E3779B97F4A7C15ULL;
+        for (std::uint64_t p : {static_cast<std::uint64_t>(parts)...}) {
+            h ^= p + 0x9E3779B97F4A7C15ULL + (h << 6) + (h >> 2);
+            h ^= h >> 30; h *= 0xBF58476D1CE4E5B9ULL;
+            h ^= h >> 27; h *= 0x94D049BB133111EBULL;
+            h ^= h >> 31;
+        }
+        return h;
     }
 
     /**

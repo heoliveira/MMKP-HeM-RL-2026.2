@@ -236,7 +236,7 @@ namespace metaheuristic {
 
         heuristic::boot(initial_state);
         metrics::calculate_metrics(initial_state);
-        if (metrics_ptr->heuristic != metrics::Algorithm::greedy_cost_benefit || metrics_ptr->run_id == 1) {
+        if ((metrics_ptr->heuristic != metrics::Algorithm::greedy_cost_benefit && metrics_ptr->heuristic != metrics::Algorithm::greedy_worst_fit) || metrics_ptr->run_id == 1) {
             metrics::save_results(initial_state, false);
         }
 

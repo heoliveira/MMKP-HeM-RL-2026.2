@@ -68,9 +68,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Threads::Threads
 )
 
-# EN: Add preprocessor definitions (-DNDEBUG -DIL_STD)
+# EN: Add preprocessor definitions (-DNDEBUG -DIL_STD -DUSE_CPLEX)
 # PT: Adiciona definições de pré-processador (-DNDEBUG -DIL_STD)
-target_compile_definitions(${PROJECT_NAME} PRIVATE NDEBUG IL_STD)
+target_compile_definitions(${PROJECT_NAME} PRIVATE NDEBUG IL_STD USE_CPLEX)
 
 # EN: Add optimization (-O3) and compiler flags
 # PT: Adiciona flags de otimização máxima (-O3) e compilação

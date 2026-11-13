@@ -88,9 +88,11 @@ cd ..
 | `-1` | `HEURISTIC` | `GREEDY_CB` | Deterministic greedy allocation sorted by surrogate cost-benefit utility. |
 | `-2` | `HEURISTIC` | `GREEDY_RANDOM` | Stochastic baseline assigning each device to a random server. |
 | `-3` | `HEURISTIC` | `GREEDY_RANDOM_FALLBACK` | Two-stage stochastic allocation prioritizing Edge (EC) with Cloud (CC) fallback. |
+| `-4` | `HEURISTIC` | `GREEDY_WF` | Deterministic worst-fit greedy: `GREEDY_CB` cost-benefit order, but each device goes to the feasible server left with the **largest** normalized residual capacity. |
 | `1` | `METAHEURISTIC` | `SA` + `GREEDY_CB` | Simulated Annealing initialized with `GREEDY_CB`. |
 | `2` | `METAHEURISTIC` | `SA` + `GREEDY_RANDOM` | Simulated Annealing initialized with `GREEDY_RANDOM`. |
 | `3` | `METAHEURISTIC` | `SA` + `GREEDY_RANDOM_FALLBACK` | Simulated Annealing initialized with `GREEDY_RANDOM_FALLBACK`. |
+| `4` | `METAHEURISTIC` | `SA` + `GREEDY_WF` | Simulated Annealing initialized with `GREEDY_WF`. |
 
 *Note: When executing options `1`, `2`, and `3`, the initial heuristic solution is automatically evaluated and saved under `results/HEURISTIC/` prior to running Simulated Annealing.*
 

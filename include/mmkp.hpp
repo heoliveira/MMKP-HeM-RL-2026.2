@@ -196,32 +196,17 @@ namespace data::generate {
      * @brief Generates or loads network service requirement templates.
      * @details Creates random service profiles with varying task counts, memory, storage, 
      * and processing demands, persisting them to `data/Services.txt`. If the file already exists, 
-     * reloads the profiles and updates their penalty costs (`COST`) according to `fixed_penalty`.
+     * reloads them untouched. The file always stores task-proportional penalty costs; the fixed-penalty scenario is applied later, in `data::load::devices`.
      * 
      * @param num_services The total number of distinct service profiles to generate.
-     * @param fixed_penalty If `true`, assigns a unit penalty cost (`1.0`); if `false`, generates task-proportional random penalty costs.
+     * @param fixed_penalty Unused for the file content (kept for API compatibility); costs are always task-proportional.
      * @return A 2D string vector containing the generated or updated services dataset.
      */
     inline std::vector<std::vector<std::string>> services(const int num_services = 10, bool fixed_penalty = true) {
         std::filesystem::path service_path = DATA_PATH / "Services.txt";
         
         if (std::filesystem::exists(service_path)) {
-            auto loaded = csv::read(service_path.string(), ';').value_or(std::vector<std::vector<std::string>>{});
-
-            if (loaded.size() > 1) {
-                for (size_t i = 1; i < loaded.size(); i++) {
-                    int tsk = std::stoi(loaded[i][5]);
-                    double cos = 1.0;
-                    if (!fixed_penalty) {
-                        for (int j = 0; j < tsk; j++) {
-                            cos += randomness::random_number(ZERO, 2.5);
-                        }
-                    }
-                    loaded[i][1] = convert::to_string(cos, DECIMAL_PLACES);
-                }
-                csv::write(service_path.string(), loaded, ';');
-            }
-            return loaded;
+            return csv::read(service_path.string(), ';').value_or(std::vector<std::vector<std::string>>{});
         }
 
         std::vector<std::vector<std::string>> services;
@@ -232,9 +217,7 @@ namespace data::generate {
             double cpu = 0.0, mem = 0.0, sto = 0.0, cos = 1.0;
 
             for (int j = 0; j < tsk; j++) {
-                if (!fixed_penalty) {
-                    cos += randomness::random_number(ZERO, 2.5);
-                }
+                cos += randomness::random_number(ZERO, 2.5);
                 cpu += randomness::random_number(ZERO, 2.5);
                 mem += randomness::random_number(ZERO, 2.5);
                 sto += randomness::random_number(ZERO, 15.0);
@@ -271,17 +254,7 @@ namespace data::generate {
         if (data_services.size() <= 1) return {};
 
         if (std::filesystem::exists(device_file_path)) {
-            auto loaded = csv::read(device_file_path.string(), ';').value_or(std::vector<std::vector<std::string>>{});
-            
-            if (loaded.size() > 1) {
-                for (size_t i = 1; i < loaded.size(); i++) {
-                int svc = std::stoi(loaded[i][6]);
-                loaded[i][1] = data_services.at(svc).at(1);
-            }
-            csv::write(device_file_path.string(), loaded, ';');
-            }
-
-            return loaded;
+            return csv::read(device_file_path.string(), ';').value_or(std::vector<std::vector<std::string>>{});
         }
 
         std::vector<std::vector<std::string>> devices;
@@ -365,7 +338,7 @@ namespace data::load {
      * @brief Loads device data from disk (generating it if absent) into a vector of `core::Device` objects.
      * @param length The total number of devices to load.
      * @param num_services The number of distinct services to generate if absent. Defaults to 10.
-     * @param fixed_penalty Whether the penalty (cost) of each device is fixed or can vary. Defaults to true.
+     * @param fixed_penalty If `true`, overrides every device cost with `1.0` after loading (the files are never modified). Defaults to true.
      * @return A 1-indexed `core::Devices` vector containing the parsed device instances.
      */
     inline core::Devices devices(const int length, const int num_services = 10, bool fixed_penalty = true) {
@@ -395,6 +368,10 @@ namespace data::load {
                 std::cerr << "Error parsing device data: " << e.what() << "\n";
                 break;
             }
+        }
+
+        if (fixed_penalty) {
+            for (size_t d = 1; d < devices.size(); ++d) devices[d].cost = 1.0;
         }
 
         return devices;
@@ -483,6 +460,7 @@ namespace metrics {
         greedy_cost_benefit,    ///< @brief Deterministic surrogate cost-benefit greedy heuristic.
         greedy_random,          ///< @brief Single-stage uniform random greedy heuristic.
         greedy_random_fallback, ///< @brief Two-stage Edge-first random greedy heuristic with Cloud fallback.
+        greedy_worst_fit,        ///< @brief Deterministic worst-fit greedy heuristic (cost-benefit order, server chosen by residual capacity).
         simulated_annealing     ///< @brief Simulated Annealing meta-heuristic.
     };
 
@@ -497,6 +475,7 @@ namespace metrics {
             case Algorithm::greedy_cost_benefit:    return "GREEDY_CB";    
             case Algorithm::greedy_random:          return "GREEDY_RANDOM";
             case Algorithm::greedy_random_fallback: return "GREEDY_RANDOM_FALLBACK";
+            case Algorithm::greedy_worst_fit:        return "GREEDY_WF";
             case Algorithm::simulated_annealing:    return "SA";
             default:                                return "NONE";
         }

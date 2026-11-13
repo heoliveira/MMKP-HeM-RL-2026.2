@@ -1,0 +1,96 @@
+% =============================================================================
+% WF e SAWF para o artigo (formato do Algoritmo 1 / GR).
+% Blocos independentes: (1) texto + pseudocodigo da WF, (2) texto da SAWF,
+% (3) pacotes necessarios, (4) referencias (.bib).
+% =============================================================================
+
+% ---------------------------------------------------------------------------
+% (1) TEXTO + PSEUDOCODIGO DA WF  (inserir na Secao 3.2, apos a GCB)
+% ---------------------------------------------------------------------------
+\textbf{\textit{Greedy Worst-Fit}} (\textbf{WF}) (\textbf{Algoritmo~\ref{alg:wf}}):
+heur\'istica construtiva determin\'istica, inspirada na regra \textit{worst-fit} da classe
+\textit{Any Fit} de heur\'isticas de empacotamento~\cite{johnson1974fast,coffman1996approximation}
+e em sua extens\~ao ao caso vetorial~\cite{mommessin2025classification}.
+Reutiliza a pseudoutilidade da GCB: calcula o benef\'icio $d.\mathit{benefit}$ de cada item (linha 1)
+e o ordena de forma decrescente (linha 2). Em seguida, para cada item $d \in D'$ (linha 3),
+percorre as mochilas $i \in V$ que comportam $d$ (linhas 5--6) e calcula a folga residual normalizada
+que $i$ teria ap\'os receber $d$, somando, nas tr\^es dimens\~oes, a capacidade residual restante dividida
+pela capacidade total da mochila (linha 7). O item \'e alocado na mochila de \textbf{maior} folga
+(linhas 8--11); em caso de empate, na de menor \'indice, e, se nenhuma comportar $d$, ele permanece
+sem atendimento. Diferentemente da GCB, que preenche as mochilas sequencialmente, a WF escolhe a
+mochila de cada item e tende a distribuir a carga entre elas. Apresenta complexidade de tempo
+$\mathcal{O}(|D| \log |D| + |V| \cdot |D|)$ e espa\c{c}o auxiliar $\mathcal{O}(|D|)$.
+
+\begin{algorithm}[t]
+\caption{$\mathit{greedy\_worst\_fit}\ (D, V)$}\label{alg:wf}
+\begin{algorithmic}[1]
+\State $d.\mathit{benefit} \leftarrow c_d \Big/ \left( \frac{p_d}{\sum_{i \in V} P^i} + \frac{m_d}{\sum_{i \in V} M^i} + \frac{s_d}{\sum_{i \in V} S^i} \right), \ \forall d \in D$
+\State $D' \leftarrow \mathit{sort\_descending\_benefit}(D)$
+\ForAll{$d \in D'$}
+    \State $i^{*} \leftarrow \mathrm{null}$; \quad $\mathit{best} \leftarrow -\infty$
+    \ForAll{$i \in V$}
+        \If{$i.\mathit{can\_serve}(d)$}
+            \State $\mathit{score} \leftarrow \dfrac{P^i_{\mathit{res}} - p_d}{P^i} + \dfrac{M^i_{\mathit{res}} - m_d}{M^i} + \dfrac{S^i_{\mathit{res}} - s_d}{S^i}$
+            \If{$\mathit{score} > \mathit{best}$}
+                \State $\mathit{best} \leftarrow \mathit{score}$; \quad $i^{*} \leftarrow i$
+            \EndIf
+        \EndIf
+    \EndFor
+    \If{$i^{*} \neq \mathrm{null}$}
+        \State $i^{*} \leftarrow \mathit{add\_item}(d)$
+    \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+% Nota: P^i_res, M^i_res e S^i_res sao as capacidades residuais (capacidade menos o consumo
+% atual) da mochila i. Se quiser, acrescente-as a Tabela 11 (Estruturas, atributos...).
+
+% ---------------------------------------------------------------------------
+% (2) TEXTO DA SAWF  (inserir na Secao 3.3, junto ao Algoritmo 5)
+% ---------------------------------------------------------------------------
+\textbf{SAWF}: \'e o \textit{Simulated Annealing} do Algoritmo~5, sem altera\c{c}\~ao no operador de
+vizinhan\c{c}a nem no esquema de resfriamento, inicializado com a solu\c{c}\~ao constru\'ida pela WF
+(linha 1 do Algoritmo~5). Os par\^ametros s\~ao os mesmos das demais variantes
+($T_0 = 50{,}0$, $\alpha = 0{,}999$, $\mathit{loop} = 10$ e $\mathit{tries} = 10$), de modo que SAGR,
+SAGRF, SAGCB e SAWF diferem apenas pela heur\'istica construtiva de partida.
+
+% ---------------------------------------------------------------------------
+% (3) PACOTES NECESSARIOS (se o template ainda nao os carrega)
+% ---------------------------------------------------------------------------
+% \usepackage{amsmath}
+% \usepackage{algorithm}
+% \usepackage[noend]{algpseudocode}   % "noend" omite as linhas "end for"/"end if", como no print
+% \floatname{algorithm}{Algoritmo}
+%
+% Se o artigo usa o pacote "algorithmic" no lugar de "algpseudocode", troque:
+%   \State -> \STATE   \ForAll -> \FORALL   \If -> \IF   \EndIf -> \ENDIF   \EndFor -> \ENDFOR
+
+% ---------------------------------------------------------------------------
+% (4) REFERENCIAS (.bib). Conferir os dados antes de submeter.
+% ---------------------------------------------------------------------------
+% @article{johnson1974fast,
+%   author  = {Johnson, David S.},
+%   title   = {Fast algorithms for bin packing},
+%   journal = {Journal of Computer and System Sciences},
+%   volume  = {8}, number = {3}, pages = {272--314}, year = {1974},
+%   doi     = {10.1016/S0022-0000(74)80026-7}
+% }
+%
+% @incollection{coffman1996approximation,
+%   author    = {Coffman Jr., Edward G. and Garey, Michael R. and Johnson, David S.},
+%   title     = {Approximation algorithms for bin packing: a survey},
+%   booktitle = {Approximation Algorithms for {NP}-Hard Problems},
+%   editor    = {Hochbaum, Dorit S.},
+%   publisher = {PWS Publishing},
+%   year      = {1996},
+%   pages     = {46--93}   % CONFERIR as paginas
+% }
+%
+% @article{mommessin2025classification,   % ja existe na bibliografia do artigo: use a chave atual
+%   author  = {Mommessin, Cl{\'e}ment and Erlebach, Thomas and Shakhlevich, Natalia V.},
+%   title   = {Classification and evaluation of the algorithms for vector bin packing},
+%   journal = {Computers \& Operations Research},
+%   volume  = {173}, pages = {106860}, year = {2025},
+%   doi     = {10.1016/j.cor.2024.106860}
+% }

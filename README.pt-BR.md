@@ -88,9 +88,11 @@ cd ..
 | `-1` | `HEURISTIC` | `GREEDY_CB` | Alocação gulosa determinística ordenada pela razão custo-benefício multidimensional. |
 | `-2` | `HEURISTIC` | `GREEDY_RANDOM` | *Baseline* estocástica que tenta alocar cada dispositivo em um servidor sorteado. |
 | `-3` | `HEURISTIC` | `GREEDY_RANDOM_FALLBACK` | Alocação estocástica em dois estágios priorizando a Borda (EC) com *fallback* para Nuvem (CC). |
+| `-4` | `HEURISTIC` | `GREEDY_WF` | Alocação gulosa determinística (*worst-fit*): ordem de custo-benefício da `GREEDY_CB`, mas cada dispositivo vai para o servidor viável que fica com a **maior** folga residual normalizada. |
 | `1` | `METAHEURISTIC` | `SA` + `GREEDY_CB` | *Simulated Annealing* inicializado com a solução da `GREEDY_CB`. |
 | `2` | `METAHEURISTIC` | `SA` + `GREEDY_RANDOM` | *Simulated Annealing* inicializado com a solução da `GREEDY_RANDOM`. |
 | `3` | `METAHEURISTIC` | `SA` + `GREEDY_RANDOM_FALLBACK` | *Simulated Annealing* inicializado com a solução da `GREEDY_RANDOM_FALLBACK`. |
+| `4` | `METAHEURISTIC` | `SA` + `GREEDY_WF` | *Simulated Annealing* inicializado com a solução da `GREEDY_WF`. |
 
 *Nota: Ao executar as opções `1`, `2` e `3`, a solução inicial gerada pela heurística base já é automaticamente avaliada e salva em `results/HEURISTIC/` antes do início do Simulated Annealing.*
 

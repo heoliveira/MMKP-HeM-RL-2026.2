@@ -102,6 +102,74 @@ namespace heuristic {
             auto end_chrono = std::chrono::high_resolution_clock::now();
             metrics_ptr->outputs.execution_time = std::chrono::duration<double>(end_chrono - start_chrono).count();
         }
+
+        /**
+         * @brief Executes a deterministic worst-fit allocation in cost-benefit order.
+         * @details Sorts devices by the same surrogate pseudo-utility as `greedy_cost_benefit` and, for each
+         * device, scans all servers and allocates it to the feasible server that would be left with the largest normalized residual capacity (loosest fit).
+         * The residual is the sum, over CPU, MEM and STO, of the capacity left after the allocation divided
+         * by the server capacity. Ties go to the lowest server ID, so the result is deterministic.
+         * Complexity: \f$O(|D| \log |D| + |D| \cdot |V|)\f$.
+         * 
+         * @param state The unified simulation result state containing devices, servers, and metrics.
+         */
+        inline void greedy_worst_fit(metrics::Result& state) {
+            auto metrics_ptr = std::dynamic_pointer_cast<metrics::HeuristicMetrics>(state.stats);
+            if (!metrics_ptr) {
+                std::cerr << "Error: Invalid metrics type for heuristic solver.\n";
+                return;
+            }
+
+            core::Devices& devices = state.devices;
+            core::Servers& servers = state.servers;
+
+            auto start_chrono = std::chrono::high_resolution_clock::now();
+
+            double total_cpu = 0.0, total_mem = 0.0, total_sto = 0.0;
+            for (size_t i = 1; i < servers.size(); i++) {
+                total_cpu += servers[i].cpu;
+                total_mem += servers[i].mem;
+                total_sto += servers[i].sto;
+            }
+
+            id_pair_vector candidates;
+            candidates.reserve(devices.size());
+            for (size_t d = 1; d < devices.size(); d++) {
+                const core::Device& device = devices[d];
+                if (!device.served) {
+                    double utility = device.cost / (device.cpu / total_cpu + device.mem / total_mem + device.sto / total_sto);
+                    candidates.emplace_back(device.id, utility);
+                }
+            }
+
+            std::sort(candidates.begin(), candidates.end(), [](const id_pair& a, const id_pair& b) {
+                return a.second > b.second;
+            });
+
+            for (const id_pair& candidate : candidates) {
+                core::Device& device = devices[candidate.first];
+                size_t best_id = 0;
+                double best_score = std::numeric_limits<double>::lowest();
+
+                for (size_t i = 1; i < servers.size(); i++) {
+                    const core::Server& server = servers[i];
+                    if (!server.can_serve(device)) continue;
+
+                    double score = (server.cpu - server.supply.cpu - device.cpu) / server.cpu
+                                 + (server.mem - server.supply.mem - device.mem) / server.mem
+                                 + (server.sto - server.supply.sto - device.sto) / server.sto;
+                    if (score > best_score) {
+                        best_score = score;
+                        best_id = i;
+                    }
+                }
+
+                if (best_id != 0) servers[best_id].add_service(device);
+            }
+
+            auto end_chrono = std::chrono::high_resolution_clock::now();
+            metrics_ptr->outputs.execution_time = std::chrono::duration<double>(end_chrono - start_chrono).count();
+        }
     
         /**
          * @brief Executes a fast random baseline resource allocation.
@@ -198,6 +266,8 @@ namespace heuristic {
 
         if (metrics::Algorithm::greedy_cost_benefit == state.stats->algorithm) {
             greedy_cost_benefit(state);
+        } else if (metrics::Algorithm::greedy_worst_fit == state.stats->algorithm) {
+            greedy_worst_fit(state);
         } else if (metrics::Algorithm::greedy_random == state.stats->algorithm) {
             greedy_random(state);
         } else if (metrics::Algorithm::greedy_random_fallback == state.stats->algorithm) {
